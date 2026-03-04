@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brain-tasks-app
+  labels:
+    app: brain-tasks-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: brain-tasks-app
+  template:
+    metadata:
+      labels:
+        app: brain-tasks-app
+    spec:
+      containers:
+        - name: brain-tasks-app
+          # Image is overwritten by CodeBuild during deployment:
+          # kubectl set image deployment/brain-tasks-app brain-tasks-app=<ECR_URI>:$COMMIT_SHA
+          image: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/brain-tasks-app:latest
+          ports:
+            - containerPort: 80
+
+          # Resource requests: guaranteed allocation on the node
+          # Resource limits: hard cap — pod is OOMKilled if exceeded
+          resources:
+            requests:
+              cpu: "250m"       # 0.25 vCPU guaranteed
+              memory: "128Mi"   # nginx serving static files is lightweight
+            limits:
+              cpu: "500m"       # 0.5 vCPU max
+              memory: "256Mi"
+
+          # Liveness probe: is the container alive?
+          # If this fails 3 times, Kubernetes restarts the pod.
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10   # wait 10s before first check
+            periodSeconds: 20         # check every 20s
+            failureThreshold: 3
+
+          # Readiness probe: is the container ready to receive traffic?
+          # If this fails, pod is removed from Service endpoints — no traffic sent.
+          # Prevents requests hitting a pod that hasn't finished starting.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5    # nginx starts fast, 5s is enough
+            periodSeconds: 10
+            failureThreshold: 3
