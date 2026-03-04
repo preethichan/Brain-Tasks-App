@@ -113,9 +113,11 @@ building inside AWS CodeBuild. Final image size is approximately 25MB.
 A custom `nginx.conf` is included alongside the Dockerfile. This is required for 
 React Router: without the `try_files` fallback directive, any client-side route 
 (e.g. `/tasks`) returns a 404 because nginx looks for a real file at that path. 
-The config catches all unmatched paths and returns `index.html`, letting React 
+The config catches all unmatched paths and returns `index.html`, letting React
 handle routing client-side.
+
 ---
+
 
 ##  Phase 2 — Amazon ECR
 
