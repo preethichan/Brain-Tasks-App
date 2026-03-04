@@ -118,18 +118,6 @@ Additional nginx config details:
 - Hashed static assets (JS/CSS) served with `immutable` 1-year cache — safe because filenames change on each build
 - Gzip compression enabled for `text`, `js`, `css`, `svg`
 
-```bash
-# Build the image
-docker build -t brain-tasks-app:latest .
-
-# Run — maps container port 80 to localhost 3000
-docker run -p 3000:80 brain-tasks-app:latest
-
-# Verify
-curl -I http://localhost:3000
-# Expected: HTTP/1.1 200 OK
-```
-
 ---
 
 ##  Phase 2 — Amazon ECR
@@ -249,46 +237,6 @@ kubectl get service brain-tasks-service
 
 ### `buildspec.yml`
 
-```yaml
-version: 0.2
-
-env:
-  variables:
-    AWS_DEFAULT_REGION: us-east-1
-    ECR_REPO_URI: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/brain-tasks-app
-
-phases:
-  install:
-    runtime-versions:
-      docker: 20
-    commands:
-      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.27.0/2023-03-17/bin/linux/amd64/kubectl
-      - chmod +x ./kubectl
-      - mv ./kubectl /usr/local/bin/kubectl
-
-  pre_build:
-    commands:
-      - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name brain-tasks-cluster
-
-  build:
-    commands:
-      - echo Building Docker image...
-      - docker build -t $ECR_REPO_URI:latest .
-      - docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$IMAGE_TAG
-
-  post_build:
-    commands:
-      - echo Pushing image to ECR...
-      - docker push $ECR_REPO_URI:latest
-      - docker push $ECR_REPO_URI:$IMAGE_TAG
-      - echo Deploying to EKS...
-      - kubectl set image deployment/brain-tasks-app brain-tasks-app=$ECR_REPO_URI:$IMAGE_TAG
-      - kubectl rollout status deployment/brain-tasks-app
-```
 
 ### CodePipeline Structure
 
@@ -355,7 +303,7 @@ Application accessible at: `http://<LOAD_BALANCER_DNS>:3000`
 | Screenshot | Description |
 |---|---|
 | `codepipeline-run.png` | Successful 3-stage pipeline execution |
-| `codebuild-logs.png` | Build + push + deploy phases in CodeBuild |
+| `cloudwatch-logs.png` | Build + push + deploy phases in CodeBuild |
 | `eks-pods.png` | 3 running pods across EKS nodes |
 | `app-running.png` | React app live via LoadBalancer URL |
 
@@ -377,10 +325,9 @@ Without probes, Kubernetes cannot distinguish a crashed container from a running
 
 **Why resource requests and limits?**
 Without limits, a misbehaving pod can consume all node resources and cause noisy-neighbour failures across the cluster.
-
 **Why CodeStar Connection is recommended?"
-A CodeStar Connection is the current AWS-recommended approach for GitHub integration, avoiding personal access tokens entirely. This project uses GitHub provider v1 for simplicity; a production setup would use aws codestar-connections with OAuth app authorization.
----
+
+A CodeStar Connection is the current AWS-recommended approach for GitHub integration, avoiding personal access token---
 
 ## Possible Extensions
 
