@@ -18,7 +18,7 @@ spec:
         - name: brain-tasks-app
           # Image is overwritten by CodeBuild during deployment:
           # kubectl set image deployment/brain-tasks-app brain-tasks-app=<ECR_URI>:$COMMIT_SHA
-          image: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/brain-tasks-app:latest
+          image: 193044711070.dkr.ecr.us-east-1.amazonaws.com/brain-tasks-app:latest
           ports:
             - containerPort: 80
 
