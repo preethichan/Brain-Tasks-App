@@ -1,0 +1,54 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-east-1
+    AWS_ACCOUNT_ID: "193044711070"
+    ECR_REPO_URI: 193044711070.dkr.ecr.us-east-1.amazonaws.com/brain-tasks-app
+    EKS_CLUSTER_NAME: brain-tasks-cluster
+    DEPLOYMENT_NAME: brain-tasks-app
+    CONTAINER_NAME: brain-tasks-app
+
+phases:
+  install:
+    runtime-versions:
+      docker: 20
+    commands:
+      - echo "Installing kubectl..."
+      - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
+      - chmod +x kubectl
+      - mv kubectl /usr/local/bin/kubectl
+      - kubectl version --client
+
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
+
+      - echo "Setting image tag from commit SHA..."
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - echo "Image tag is $IMAGE_TAG"
+
+      - echo "Updating kubeconfig for EKS cluster..."
+      - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $EKS_CLUSTER_NAME
+
+  build:
+    commands:
+      - echo "Building Docker image for linux/amd64..."
+      - docker build --platform linux/amd64 -t $ECR_REPO_URI:latest .
+      - docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$IMAGE_TAG
+      - echo "Build complete — tagged as latest and $IMAGE_TAG"
+
+  post_build:
+    commands:
+      - echo "Pushing image to ECR..."
+      - docker push $ECR_REPO_URI:latest
+      - docker push $ECR_REPO_URI:$IMAGE_TAG
+
+      - echo "Deploying to EKS..."
+      - kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$ECR_REPO_URI:$IMAGE_TAG
+      - kubectl rollout status deployment/$DEPLOYMENT_NAME --timeout=120s
+
+      - echo "Deployment complete. Current pods:"
+      - kubectl get pods -l app=brain-tasks-app
