@@ -6,7 +6,7 @@
 # nginx serves static files and handles SPA client-side routing.
 # ─────────────────────────────────────────────────────────────
 
-FROM nginx:1.25-alpine
+FROM --platform=linux/amd64 nginx:1.25-alpine
 
 # Remove default nginx static content
 RUN rm -rf /usr/share/nginx/html/*
