@@ -1,10 +1,10 @@
-# 🚀 Brain Tasks App — Production DevOps Pipeline on AWS
+#  Brain Tasks App — Production DevOps Pipeline on AWS
 
 > **End-to-end CI/CD pipeline**: React app → Docker → Amazon ECR → Kubernetes (EKS) → automated via AWS CodePipeline + CodeBuild → monitored with CloudWatch.
 
 ---
 
-## 📌 What This Project Demonstrates
+##  What This Project Demonstrates
 
 This project replicates a **production-grade DevOps workflow** as used in real engineering teams. It is not a tutorial reproduction — every component is wired together to function as a complete delivery system.
 
@@ -19,7 +19,7 @@ This project replicates a **production-grade DevOps workflow** as used in real e
 
 ---
 
-## 🏗 Architecture
+##  Architecture
 
 ```
 Developer
@@ -76,7 +76,7 @@ Developer
 
 ---
 
-## 🗂 Repository Structure
+##  Repository Structure
 
 ```
 Brain-Tasks-App/
@@ -102,7 +102,7 @@ Brain-Tasks-App/
 
 ---
 
-## 🐳 Phase 1 — Dockerize the Application
+##  Phase 1 — Dockerize the Application
 
 The upstream repository ships **pre-compiled static output** in `dist/` — there is no `package.json` or source code. The build step has already been done upstream; this repo is deployment-focused by design.
 
@@ -129,7 +129,7 @@ curl -I http://localhost:3000
 
 ---
 
-## 📦 Phase 2 — Amazon ECR
+##  Phase 2 — Amazon ECR
 
 Images are pushed to a private ECR repository and tagged with the Git commit SHA for traceability.
 
@@ -149,7 +149,7 @@ docker push <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/brain-tasks-app:latest
 
 ---
 
-## ☸️ Phase 3 — Kubernetes on AWS EKS
+##  Phase 3 — Kubernetes on AWS EKS
 
 ### Cluster Setup
 
@@ -242,7 +242,7 @@ kubectl get service brain-tasks-service
 
 ---
 
-## 🔄 Phase 4 — CI/CD Pipeline
+##  Phase 4 — CI/CD Pipeline
 
 ### `buildspec.yml`
 
@@ -302,7 +302,7 @@ phases:
 
 ---
 
-## 📊 Phase 5 — Monitoring with CloudWatch
+##  Phase 5 — Monitoring with CloudWatch
 
 CloudWatch is used to capture logs at every stage of the pipeline.
 
@@ -322,7 +322,7 @@ kubectl logs -l app=brain-tasks-app --tail=50
 
 ---
 
-## 🌐 Live Application
+##  Live Application
 
 After deployment, retrieve the LoadBalancer DNS:
 
@@ -337,7 +337,7 @@ Application accessible at: `http://<LOAD_BALANCER_DNS>:3000`
 
 ---
 
-## 🔐 IAM Requirements Summary
+##  IAM Requirements Summary
 
 | Role | Permissions Needed |
 |---|---|
@@ -347,7 +347,7 @@ Application accessible at: `http://<LOAD_BALANCER_DNS>:3000`
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 | Screenshot | Description |
 |---|---|
@@ -358,7 +358,7 @@ Application accessible at: `http://<LOAD_BALANCER_DNS>:3000`
 
 ---
 
-## 🎯 Key Technical Decisions
+## Key Technical Decisions
 
 **Why nginx:alpine instead of a Node-based image?**
 The upstream repo ships pre-compiled `dist/` output — no Node.js runtime is needed to serve static files. `nginx:alpine` is purpose-built for this: it handles HTTP, compression, caching headers, and high concurrency with a ~25MB footprint. Running a Node server to serve static files would add unnecessary weight and attack surface.
@@ -377,7 +377,7 @@ Without limits, a misbehaving pod can consume all node resources and cause noisy
 
 ---
 
-## 🔭 Possible Extensions
+## Possible Extensions
 
 | Enhancement | Tool |
 |---|---|
@@ -390,9 +390,9 @@ Without limits, a misbehaving pod can consume all node resources and cause noisy
 
 ---
 
-## 👤 Author
+##  Author
 
-**DevOps / Cloud Engineer**
+**Preethi Chandrasekan/ DevOps / Cloud Engineer**
 Specialization: AWS · Kubernetes · CI/CD · Container Infrastructure
 
 ---
