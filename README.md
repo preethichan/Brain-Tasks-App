@@ -180,7 +180,7 @@ kubectl get nodes
 ### Kubernetes Manifests
 
 #### `k8s/deployment.yaml`
-#### `K8s/service.yaml'
+#### `K8s/service.yaml`
 
 ```bash
 # Deploy to EKS
