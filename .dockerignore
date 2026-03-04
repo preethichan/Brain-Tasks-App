@@ -1,0 +1,19 @@
+# .dockerignore — exclude everything not needed in the image
+
+# Git
+.git
+.gitignore
+
+# CI/CD configs (not needed inside container)
+buildspec.yml
+k8s/
+screenshots/
+README.md
+
+# Local env files
+.env
+.env.*
+
+# OS artifacts
+.DS_Store
+Thumbs.db
