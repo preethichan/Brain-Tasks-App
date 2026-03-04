@@ -105,17 +105,16 @@ Brain-Tasks-App/
 
 ##  Phase 1 — Dockerize the Application
 
-The upstream repository ships **pre-compiled static output** in `dist/` — there is no `package.json` or source code. The build step has already been done upstream; this repo is deployment-focused by design.
+The Dockerfile uses `public.ecr.aws/nginx/nginx:1.25-alpine` as a single stage — 
+copying `dist/` directly into the nginx web root. Pulling from AWS ECR Public 
+instead of Docker Hub avoids unauthenticated pull rate limits (429 errors) when 
+building inside AWS CodeBuild. Final image size is approximately 25MB.
 
-The Dockerfile uses `nginx:1.25-alpine` as a single stage — copying `dist/` directly into the nginx web root. Final image size is approximately 25MB.
-
-A custom `nginx.conf` is included alongside the Dockerfile. This is required for React Router: without the `try_files` fallback directive, any client-side route (e.g. `/tasks`) returns a 404 because nginx looks for a real file at that path. The config catches all unmatched paths and returns `index.html`, letting React handle routing client-side.
-
-Additional nginx config details:
-- `index.html` served with `no-cache` headers — ensures users always get the latest deploy
-- Hashed static assets (JS/CSS) served with `immutable` 1-year cache — safe because filenames change on each build
-- Gzip compression enabled for `text`, `js`, `css`, `svg`
-
+A custom `nginx.conf` is included alongside the Dockerfile. This is required for 
+React Router: without the `try_files` fallback directive, any client-side route 
+(e.g. `/tasks`) returns a 404 because nginx looks for a real file at that path. 
+The config catches all unmatched paths and returns `index.html`, letting React 
+handle routing client-side.
 ---
 
 ##  Phase 2 — Amazon ECR
