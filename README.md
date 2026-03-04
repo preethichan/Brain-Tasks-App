@@ -3,8 +3,6 @@
  **End-to-end CI/CD pipeline**: React app → Docker → Amazon ECR → Kubernetes (EKS) → automated via AWS CodePipeline + CodeBuild → monitored with CloudWatch.
 
  **LoadBalancer ARN:** http://a103d6d49925745cf9cb64f395a10155-2117866487.us-east-1.elb.amazonaws.com:3000/
-
-arn:aws:codebuild:us-east-1:193044711070:build/brain-tasks-build:f0a5bdd0-1aa8-4a5e-a945-b4b9fbe18bef
 ---
 
 ##  What This Project Demonstrates
