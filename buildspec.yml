@@ -11,8 +11,6 @@ env:
 
 phases:
   install:
-    runtime-versions:
-      docker: 20
     commands:
       - echo "Installing kubectl..."
       - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"

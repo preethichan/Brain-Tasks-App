@@ -375,6 +375,8 @@ Without probes, Kubernetes cannot distinguish a crashed container from a running
 **Why resource requests and limits?**
 Without limits, a misbehaving pod can consume all node resources and cause noisy-neighbour failures across the cluster.
 
+**Why CodeStar Connection is recommended?"
+A CodeStar Connection is the current AWS-recommended approach for GitHub integration, avoiding personal access tokens entirely. This project uses GitHub provider v1 for simplicity; a production setup would use aws codestar-connections with OAuth app authorization.
 ---
 
 ## Possible Extensions
@@ -397,4 +399,3 @@ Specialization: AWS · Kubernetes · CI/CD · Container Infrastructure
 
 ---
 
-*Upstream application: [Brain-Tasks-App](https://github.com/Vennilavanguvi/Brain-Tasks-App) — forked and extended with full DevOps infrastructure.*
