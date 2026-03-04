@@ -1,10 +1,10 @@
-# 🚀 Brain Tasks App — Production DevOps Pipeline on AWS
+#  Brain Tasks App — Production DevOps Pipeline on AWS
 
 > **End-to-end CI/CD pipeline**: React app → Docker → Amazon ECR → Kubernetes (EKS) → automated via AWS CodePipeline + CodeBuild → monitored with CloudWatch.
 
 ---
 
-## 📌 What This Project Demonstrates
+##  What This Project Demonstrates
 
 This project replicates a **production-grade DevOps workflow** as used in real engineering teams. It is not a tutorial reproduction — every component is wired together to function as a complete delivery system.
 
@@ -19,7 +19,7 @@ This project replicates a **production-grade DevOps workflow** as used in real e
 
 ---
 
-## 🏗 Architecture
+##  Architecture
 
 ```
 Developer
@@ -76,7 +76,7 @@ Developer
 
 ---
 
-## 🗂 Repository Structure
+##  Repository Structure
 
 ```
 Brain-Tasks-App/
@@ -102,7 +102,7 @@ Brain-Tasks-App/
 
 ---
 
-## 🐳 Phase 1 — Dockerize the Application
+##  Phase 1 — Dockerize the Application
 
 The upstream repository ships **pre-compiled static output** in `dist/` — there is no `package.json` or source code. The build step has already been done upstream; this repo is deployment-focused by design.
 
@@ -130,7 +130,7 @@ curl -I http://localhost:3000
 
 ---
 
-## 📦 Phase 2 — Amazon ECR
+##  Phase 2 — Amazon ECR
 
 Images are pushed to a private ECR repository and tagged with the Git commit SHA for traceability.
 
@@ -157,7 +157,7 @@ aws ecr list-images --repository-name brain-tasks-app --region us-east-1
 
 ---
 
-## ☸️ Phase 3 — Kubernetes on AWS EKS
+##  Phase 3 — Kubernetes on AWS EKS
 
 ### Cluster Setup
 
@@ -180,71 +180,7 @@ kubectl get nodes
 ### Kubernetes Manifests
 
 #### `k8s/deployment.yaml`
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: brain-tasks-app
-  labels:
-    app: brain-tasks-app
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: brain-tasks-app
-  template:
-    metadata:
-      labels:
-        app: brain-tasks-app
-    spec:
-      containers:
-        - name: brain-tasks-app
-          image: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/brain-tasks-app:latest
-          ports:
-            - containerPort: 80
-          resources:
-            requests:
-              cpu: "250m"
-              memory: "128Mi"
-            limits:
-              cpu: "500m"
-              memory: "256Mi"
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 10
-            periodSeconds: 20
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            failureThreshold: 3
-```
-
-#### `k8s/service.yaml`
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: brain-tasks-service
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: "classic"
-spec:
-  selector:
-    app: brain-tasks-app
-  type: LoadBalancer
-  ports:
-    - name: http
-      protocol: TCP
-      port: 3000
-      targetPort: 80
-```
+#### `K8s/service.yaml'
 
 ```bash
 # Deploy to EKS
@@ -260,7 +196,7 @@ kubectl get service brain-tasks-service
 
 ---
 
-## 🔄 Phase 4 — CI/CD Pipeline
+##  Phase 4 — CI/CD Pipeline
 
 ### IAM Setup
 
@@ -286,66 +222,7 @@ eksctl create iamidentitymapping \
   --group system:masters \
   --username codebuild
 ```
-
-Without this step, `kubectl set image` inside CodeBuild returns 403 from EKS even with valid AWS credentials — EKS has its own access control layer separate from IAM.
-
-### `buildspec.yml`
-
-```yaml
-version: 0.2
-
-env:
-  variables:
-    AWS_DEFAULT_REGION: us-east-1
-    AWS_ACCOUNT_ID: "<ACCOUNT_ID>"
-    ECR_REPO_URI: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/brain-tasks-app
-    EKS_CLUSTER_NAME: brain-tasks-cluster
-    DEPLOYMENT_NAME: brain-tasks-app
-    CONTAINER_NAME: brain-tasks-app
-
-phases:
-  install:
-    commands:
-      - echo "Installing kubectl..."
-      - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
-      - chmod +x kubectl
-      - mv kubectl /usr/local/bin/kubectl
-      - kubectl version --client
-
-  pre_build:
-    commands:
-      - echo "Logging in to Amazon ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
-
-      - echo "Logging in to ECR Public to avoid Docker Hub rate limits..."
-      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-
-      - echo "Setting image tag from commit SHA..."
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
-
-      - echo "Updating kubeconfig for EKS cluster..."
-      - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $EKS_CLUSTER_NAME
-
-  build:
-    commands:
-      - echo "Building Docker image for linux/amd64..."
-      - docker build --platform linux/amd64 -t $ECR_REPO_URI:latest .
-      - docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$IMAGE_TAG
-
-  post_build:
-    commands:
-      - echo "Pushing image to ECR..."
-      - docker push $ECR_REPO_URI:latest
-      - docker push $ECR_REPO_URI:$IMAGE_TAG
-
-      - echo "Deploying to EKS..."
-      - kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$ECR_REPO_URI:$IMAGE_TAG
-      - kubectl rollout status deployment/$DEPLOYMENT_NAME --timeout=120s
-
-      - echo "Deployment complete. Current pods:"
-      - kubectl get pods -l app=brain-tasks-app
-```
+Without this step, kubectl set image inside CodeBuild returns 403 from EKS even with valid AWS credentials — EKS has its own access control layer separate from IAM.
 
 > **Note:** `runtime-versions: docker: 20` must NOT be declared in CodeBuild `standard:7.0` — Docker is pre-installed and declaring it causes a `YAML_FILE_ERROR`.
 
@@ -360,7 +237,7 @@ phases:
 
 ---
 
-## 📊 Phase 5 — Monitoring with CloudWatch
+##  Phase 5 — Monitoring with CloudWatch
 
 CloudWatch captures logs at every stage of the pipeline.
 
@@ -382,7 +259,7 @@ EKS control plane logging enabled for: `api`, `audit`, `authenticator`, `control
 
 ---
 
-## 🌐 Live Application
+##  Live Application
 
 **LoadBalancer URL:** `http://a103d6d49925745cf9cb64f395a10155-2117866487.us-east-1.elb.amazonaws.com:3000`
 
@@ -394,7 +271,7 @@ kubectl get service brain-tasks-service \
 
 ---
 
-## 🔐 IAM Summary
+##  IAM Summary
 
 | Role | Policies Attached |
 |---|---|
@@ -404,7 +281,7 @@ kubectl get service brain-tasks-service \
 
 ---
 
-## 📸 Screenshots
+##  Screenshots
 
 | Screenshot | Description |
 |---|---|
@@ -414,33 +291,6 @@ kubectl get service brain-tasks-service \
 
 ---
 
-## 🎯 Key Technical Decisions
-
-**Why `nginx:alpine` instead of a Node-based image?**
-The upstream repo ships pre-compiled `dist/` output — no Node.js runtime is needed to serve static files. `nginx:alpine` is purpose-built for this: it handles HTTP, compression, caching headers, and high concurrency with a ~25MB footprint. Running a Node server to serve static files would add unnecessary weight and attack surface.
-
-**Why pull nginx from ECR Public instead of Docker Hub?**
-Docker Hub enforces a 100 pulls/6hr rate limit for unauthenticated requests. CodeBuild pulls anonymously from Docker Hub by default, causing 429 errors mid-build. AWS ECR Public (`public.ecr.aws`) mirrors all official Docker Hub images with no rate limits inside AWS infrastructure.
-
-**Why `--platform linux/amd64` in the Dockerfile and build command?**
-The development machine runs Apple Silicon (ARM64). EKS `t3.medium` nodes run on AMD64 (x86_64). Building without specifying the platform produces an ARM64 image that cannot execute on EKS nodes — pods enter `CrashLoopBackOff` with `exec format error`. Pinning the platform at build time ensures architecture compatibility regardless of where the build runs.
-
-**Why a custom `nginx.conf`?**
-The default nginx config has no `try_files` fallback. React Router handles routing client-side, meaning paths like `/tasks` are not real files on disk. Without the fallback, nginx returns 404 for any route except `/`. The custom config catches all unmatched paths and returns `index.html`, letting React take over.
-
-**Why tag images with commit SHA?**
-Using `:latest` makes rollback untraceable. Tagging with `$COMMIT_HASH` means every deployment maps to a specific commit — rollback is a single `kubectl set image` pointing to the previous SHA.
-
-**Why liveness and readiness probes?**
-Without probes, Kubernetes cannot distinguish a crashed container from a running one. Readiness probes prevent traffic from reaching pods that haven't finished starting. Liveness probes trigger automatic restarts on hung containers.
-
-**Why resource requests and limits?**
-Without limits, a misbehaving pod can consume all node resources and cause noisy-neighbour failures across the cluster. Requests guarantee minimum allocation; limits enforce a hard cap.
-
-**Why add CodeBuild role to EKS `aws-auth` ConfigMap?**
-EKS maintains its own RBAC layer separate from IAM. Even with valid AWS credentials, `kubectl` calls inside CodeBuild are rejected with 403 unless the IAM role is explicitly mapped in `aws-auth`. This is the most commonly missed step when wiring CodeBuild to EKS.
-
----
 
 ## 🔭 Possible Extensions
 
@@ -456,11 +306,10 @@ EKS maintains its own RBAC layer separate from IAM. Even with valid AWS credenti
 
 ---
 
-## 👤 Author
+## Author
 
-**DevOps / Cloud Engineer**
+**Preethi Chandrasekaran  DevOps / Cloud Engineer**
 Specialization: AWS · Kubernetes · CI/CD · Container Infrastructure
 
 ---
 
-*Upstream application: [Brain-Tasks-App](https://github.com/Vennilavanguvi/Brain-Tasks-App) — forked and extended with full DevOps infrastructure.*
